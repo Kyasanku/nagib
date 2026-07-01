@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --grain: 0.02;
+}
+
+@layer base {
+  * {
+    @apply border-black/[0.07];
+  }
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-ink text-ivory font-sans antialiased;
+    background-image:
+      radial-gradient(110% 75% at 100% -10%, rgba(244, 83, 31, 0.10), transparent 55%),
+      radial-gradient(90% 70% at 0% 0%, rgba(79, 184, 164, 0.09), transparent 55%);
+    background-attachment: fixed;
+  }
+  ::selection {
+    @apply bg-gold/25 text-ivory;
+  }
+  h1, h2, h3, h4 {
+    @apply font-display tracking-tight;
+  }
+}
+
+@layer components {
+  /* Faint paper-grain overlay for warmth */
+  .grain::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    pointer-events: none;
+    opacity: var(--grain);
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .row-scroll {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .row-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  .glass {
+    @apply bg-white/70 backdrop-blur-xl border border-black/[0.06];
+  }
+
+  /* Techy mono eyebrow */
+  .eyebrow {
+    @apply font-mono text-[0.7rem] uppercase tracking-[0.2em] text-gold-soft;
+  }
+
+  .btn-gold {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-gold px-6 py-3
+    text-sm font-semibold text-white transition-all duration-300 hover:bg-gold-soft
+    hover:shadow-glow active:scale-[0.98];
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-black/[0.12]
+    bg-white px-6 py-3 text-sm font-semibold text-ivory transition-all duration-300
+    hover:border-black/25 hover:shadow-soft active:scale-[0.98];
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium;
+  }
+
+  .link-underline {
+    @apply relative after:absolute after:-bottom-1 after:left-0 after:h-px after:w-0
+    after:bg-gold after:transition-all after:duration-300 hover:after:w-full;
+  }
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

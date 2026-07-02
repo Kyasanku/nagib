@@ -6,6 +6,8 @@ import {
   LayoutDashboard,
   ImageIcon,
   Film,
+  GraduationCap,
+  ShoppingBag,
   FolderTree,
   Layers,
   Inbox,
@@ -18,14 +20,16 @@ import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 
 const nav = [
-  { href: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
-  { href: "/admin/artworks", label: "Artworks", icon: ImageIcon },
-  { href: "/admin/animations", label: "Animations", icon: Film },
-  { href: "/admin/categories", label: "Categories", icon: FolderTree },
-  { href: "/admin/collections", label: "Collections", icon: Layers },
-  { href: "/admin/commissions", label: "Commissions", icon: Inbox },
-  { href: "/admin/featured", label: "Homepage", icon: Star },
-  { href: "/admin/profile", label: "Profile", icon: UserCog },
+  { href: "/studio", label: "Overview", icon: LayoutDashboard, exact: true },
+  { href: "/studio/artworks", label: "Artworks", icon: ImageIcon },
+  { href: "/studio/animations", label: "Animations", icon: Film },
+  { href: "/studio/courses", label: "Courses", icon: GraduationCap },
+  { href: "/studio/orders", label: "Orders", icon: ShoppingBag },
+  { href: "/studio/categories", label: "Categories", icon: FolderTree },
+  { href: "/studio/collections", label: "Collections", icon: Layers },
+  { href: "/studio/commissions", label: "Commissions", icon: Inbox },
+  { href: "/studio/featured", label: "Homepage", icon: Star },
+  { href: "/studio/profile", label: "Profile", icon: UserCog },
 ];
 
 export default function AdminSidebar() {
@@ -35,12 +39,12 @@ export default function AdminSidebar() {
   async function signOut() {
     const supabase = createClient();
     if (supabase) await supabase.auth.signOut();
-    router.push("/admin/login");
+    router.push("/studio/login");
   }
 
   return (
     <aside className="sticky top-0 flex h-screen w-16 flex-col border-r border-black/[0.05] bg-ink-800/60 py-5 md:w-60">
-      <Link href="/admin" className="mb-8 flex items-center gap-3 px-3 md:px-5">
+      <Link href="/studio" className="mb-8 flex items-center gap-3 px-3 md:px-5">
         <span className="grid h-9 w-9 flex-none place-items-center rounded-full border border-gold/40 bg-gold/10 font-display text-lg text-gold">
           N
         </span>

@@ -4,9 +4,10 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { ArrowLeft } from "lucide-react";
 import { getArtworkBySlug, getArtworks } from "@/lib/data";
-import { formatPrice } from "@/lib/utils";
+import { artworkFromPrice, artworkHasMultipleFormats, formatPrice } from "@/lib/utils";
 import StatusBadge from "@/components/StatusBadge";
 import InquiryForm from "@/components/InquiryForm";
+import BuyBox from "@/components/BuyBox";
 import ArtworkCard from "@/components/ArtworkCard";
 
 export async function generateMetadata({
@@ -42,8 +43,6 @@ export default async function ArtworkDetailPage({
     art.featured_image_url,
     ...(art.images?.map((i) => i.image_url) ?? []),
   ];
-
-  const canBuy = art.status === "available" || art.status === "reserved";
 
   return (
     <div className="px-5 pb-24 pt-28 md:px-10">
@@ -93,7 +92,10 @@ export default async function ArtworkDetailPage({
               {art.title}
             </h1>
             <p className="mt-3 text-2xl text-gold">
-              {formatPrice(art.price, art.currency)}
+              {artworkHasMultipleFormats(art) && (
+                <span className="mr-1 text-base text-ivory-dim">From</span>
+              )}
+              {formatPrice(artworkFromPrice(art), art.currency)}
             </p>
 
             <p className="mt-6 leading-relaxed text-ivory-muted">{art.description}</p>
@@ -106,20 +108,24 @@ export default async function ArtworkDetailPage({
             </dl>
 
             <div className="mt-8">
-              {canBuy ? (
-                <div className="rounded-3xl border border-black/[0.05] bg-ink-800/50 p-6">
-                  <h2 className="font-display text-xl text-ivory">
-                    {art.status === "reserved" ? "Join the waitlist" : "Acquire this piece"}
-                  </h2>
+              {art.status === "available" ? (
+                <div className="rounded-3xl border border-black/[0.05] bg-ink-800 p-6 shadow-soft">
+                  <h2 className="font-display text-xl text-ivory">Acquire this piece</h2>
                   <p className="mb-5 mt-1 text-sm text-ivory-dim">
-                    {art.status === "reserved"
-                      ? "This piece is currently reserved. Leave your details and I'll reach out if it becomes available."
-                      : "Start a private inquiry to purchase the original or a fine-art print."}
+                    Choose a digital download or a shipped print, then check out securely.
+                  </p>
+                  <BuyBox artwork={art} />
+                </div>
+              ) : art.status === "reserved" ? (
+                <div className="rounded-3xl border border-black/[0.05] bg-ink-800 p-6 shadow-soft">
+                  <h2 className="font-display text-xl text-ivory">Join the waitlist</h2>
+                  <p className="mb-5 mt-1 text-sm text-ivory-dim">
+                    This piece is currently reserved. Leave your details and I&apos;ll reach out if it opens up.
                   </p>
                   <InquiryForm artworkId={art.id} artworkTitle={art.title} />
                 </div>
               ) : (
-                <div className="rounded-3xl border border-black/[0.05] bg-ink-800/50 p-6 text-center">
+                <div className="rounded-3xl border border-black/[0.05] bg-ink-800 p-6 text-center shadow-soft">
                   <p className="font-display text-xl text-ivory">This piece has found its home</p>
                   <p className="mt-1 text-sm text-ivory-dim">
                     Prints may still be available, or commission something similar.

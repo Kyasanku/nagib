@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Artwork } from "@/lib/types";
-import { formatPrice } from "@/lib/utils";
+import { artworkFromPrice, formatPrice } from "@/lib/utils";
 import StatusBadge from "./StatusBadge";
 
 export default function ArtworkCard({
@@ -42,7 +42,7 @@ export default function ArtworkCard({
             {artwork.title}
           </h3>
           <p className="mt-0.5 text-sm text-white/80">
-            {formatPrice(artwork.price, artwork.currency)}
+            {formatPrice(artworkFromPrice(artwork), artwork.currency)}
           </p>
         </div>
       </div>

@@ -31,26 +31,29 @@ cards, generous space, a cute cinematic hero, and staggered reveals. Prices are 
 |---|---|
 | `/` | Cinematic hero + Netflix-style browsing rows, animations strip, collections, commission CTA |
 | `/gallery` | Full grid with category + availability filters |
-| `/artwork/[slug]` | Detail page: images, description, price, medium, dimensions, purchase inquiry |
-| `/animations` | Grid of short animations |
-| `/animations/[slug]` | Watch page (MP4 / YouTube / Vimeo) |
-| `/marketplace` | Available originals & prints, trust strip, inquiry flow |
+| `/artwork/[slug]` | Detail page: images, description, buy box (digital + print) with Flutterwave checkout |
+| `/animations` · `/animations/[slug]` | Grid + watch page (MP4 / YouTube / Vimeo) |
+| `/marketplace` | Available originals & prints |
+| `/courses` · `/courses/[slug]` | Course catalogue + paywalled watch (free previews, enrolment-gated) |
 | `/commissions` | Offerings, process, and the commission request form |
-| `/about` | Artist bio, facts, selected work |
-| `/contact` | Business / collaboration inquiries |
+| `/support` | Donation stub (coming soon) |
+| `/checkout/status` | Post-payment success / failure + fulfilment (download / watch / shipping) |
+| `/about` · `/contact` | Bio & business inquiries |
 
-**Admin** (`/admin`)
+**Admin** — served at **`/studio`** (a private, login-gated path)
 | Route | Capabilities |
 |---|---|
-| `/admin` | Overview — stats, recent requests, quick actions |
-| `/admin/artworks` | Upload / edit / delete, set price, currency, medium, dimensions, status (available·sold·reserved·hidden) |
-| `/admin/animations` | Add animation previews / video links, set status |
-| `/admin/categories` | Create & edit categories (become homepage rows + gallery filters) |
-| `/admin/collections` | Group pieces into named collections |
-| `/admin/commissions` | View requests; move through New → Reviewing → Accepted → In Progress → Completed / Rejected |
-| `/admin/featured` | Manage the homepage hero + New Releases row |
-| `/admin/profile` | Edit artist bio, avatar, contact & socials |
-| `/admin/login` | Supabase email/password auth (or straight-through in demo mode) |
+| `/studio` | Overview — stats, recent requests, quick actions |
+| `/studio/artworks` | Upload / edit / delete; digital & print prices + toggles, status, digital file |
+| `/studio/animations` | Add animation previews / video links, set status |
+| `/studio/courses` | Create courses + lessons (with free previews), pricing, status |
+| `/studio/orders` | All purchases; revenue; mark prints **shipped** |
+| `/studio/categories` | Create & edit categories (become homepage rows + gallery filters) |
+| `/studio/collections` | Group pieces into named collections |
+| `/studio/commissions` | Move requests through New → Reviewing → Accepted → In Progress → Completed / Rejected |
+| `/studio/featured` | Manage the homepage hero + New Releases row |
+| `/studio/profile` | Edit artist bio, avatar, contact & socials |
+| `/studio/login` | Supabase email/password auth (or straight-through in demo mode) |
 
 ---
 
@@ -61,8 +64,8 @@ npm install
 npm run dev          # http://localhost:3000  (runs on sample data)
 ```
 
-Visit `/admin` — in demo mode it opens straight into the dashboard. Edits update the UI live
-but don't persist until Supabase is connected.
+The admin dashboard lives at **`/studio`** (login at `/studio/login`). In demo mode it opens
+straight in. Edits update the UI live but don't persist until Supabase is connected.
 
 ```bash
 npm run build && npm start   # production build
@@ -74,24 +77,76 @@ npm run build && npm start   # production build
 
 1. **Create a project** at [supabase.com](https://supabase.com).
 
-2. **Run the schema.** In the Supabase **SQL Editor**, paste and run:
-   - [`supabase/schema.sql`](supabase/schema.sql) — tables, enums, RLS policies, storage buckets
-   - [`supabase/seed.sql`](supabase/seed.sql) — *(optional)* starter content
+2. **Run the SQL.** In the Supabase **SQL Editor**:
+   - Fresh project → run [`supabase/schema.sql`](supabase/schema.sql) (includes everything:
+     portfolio + commerce + courses + donations, RLS, storage buckets).
+   - Already ran the v1 schema → just run [`supabase/migrations/0002_commerce.sql`](supabase/migrations/0002_commerce.sql).
+   - Optional starter content: [`supabase/seed.sql`](supabase/seed.sql).
 
-3. **Add environment variables.** Copy `.env.example` → `.env.local`:
+3. **Add environment variables** (locally in `.env.local`, and on **Vercel → Settings →
+   Environment Variables**). Copy from [`.env.example`](.env.example):
    ```bash
    NEXT_PUBLIC_SUPABASE_URL=https://YOUR-PROJECT.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
    SUPABASE_SERVICE_ROLE_KEY=your-service-role-key   # server-only, never commit
+   NEXT_PUBLIC_BASE_URL=https://your-domain.com      # used for payment redirects
    ```
-   Find these under **Project Settings → API**.
+   Supabase keys are under **Project Settings → API**.
 
 4. **Create the artist login.** In **Authentication → Users → Add user**, create an
-   email/password account. That's your admin login at `/admin/login`. (Email signups are
-   disabled for the public — only you sign in.)
+   email/password account. That's the login at `/studio/login`. Public sign-ups are off —
+   only the artist signs in. Once a real user exists, the middleware guards `/studio`.
 
-5. **Restart** `npm run dev`. The app now reads and writes live data automatically —
-   no code changes needed.
+5. **Redeploy** (Vercel) or **restart** (`npm run dev`). The app reads/writes live data
+   automatically — no code changes needed.
+
+---
+
+## 💳 Payments — Flutterwave
+
+Checkout is server-driven and verified by webhook, so amounts can't be tampered with from the
+browser. Currency is **UGX** (Flutterwave supports it).
+
+1. **Add keys** (from Flutterwave dashboard → **Settings → API Keys** — use **TEST** keys first)
+   to `.env.local` / Vercel:
+   ```bash
+   FLW_SECRET_KEY=FLWSECK_TEST-xxxxx
+   NEXT_PUBLIC_FLW_PUBLIC_KEY=FLWPUBK_TEST-xxxxx
+   FLW_WEBHOOK_HASH=some-long-random-string
+   ```
+
+2. **Set the webhook.** Flutterwave dashboard → **Settings → Webhooks**:
+   - URL: `https://your-domain.com/api/flutterwave/webhook`
+   - Secret hash: the **same** value as `FLW_WEBHOOK_HASH`.
+
+3. **How the flow works:**
+   - Buyer picks **Digital** or **Print** (or enrols in a **Course**) → `POST /api/checkout`
+     creates a `pending` order (price read from the DB) and returns a Flutterwave hosted link.
+   - After paying, Flutterwave redirects to `/api/payment/callback`, which verifies the
+     transaction and fulfils the order, then shows `/checkout/status`.
+   - The **webhook** (`/api/flutterwave/webhook`) is the authoritative fallback and re-verifies
+     every event before granting anything. Fulfilment is idempotent.
+   - **Digital** → download served via `/api/deliverables/[orderId]` (signed URL from the
+     private `deliverables` bucket). **Print** → order marked paid + the piece set to `sold`;
+     ship it, then mark **shipped** in `/studio/orders`. **Course** → a `course_enrollment` is
+     created and the buyer gets a watch link.
+
+Until keys are present, checkout returns a friendly "payments not configured yet" notice and
+nothing is charged.
+
+### Digital & print pricing
+Each artwork has independent **digital** and **print** prices with per-format toggles (set in
+`/studio/artworks`). Print checkout collects a shipping address. Upload the digital deliverable
+to the private `deliverables` bucket and paste its path into the artwork's *Digital file URL*.
+
+### Courses
+Create courses + lessons in `/studio/courses`; mark some lessons as **free previews**. Buyers
+pay once for lifetime access. Access is granted via an enrolment link (`/courses/[slug]?e=…`).
+Course videos accept MP4, YouTube or Vimeo URLs.
+
+### Donations (stub)
+`/support` collects donation *intent* but does **not** charge yet — it's wired to switch on
+later (a `donations` table already exists).
 
 ---
 
@@ -101,7 +156,8 @@ Tables created by `schema.sql`:
 
 `profiles` · `artwork_categories` · `artworks` · `artwork_images` · `animations` ·
 `collections` · `collection_items` · `commission_requests` · `purchase_inquiries` ·
-`homepage_featured_items`
+`homepage_featured_items` · `courses` · `course_lessons` · `course_enrollments` ·
+`orders` · `donations`
 
 Highlights:
 - **artworks** — `title, slug, description, category_id, price, currency,

@@ -16,6 +16,7 @@ import {
   sampleCategories,
   sampleCollections,
   sampleCommissions,
+  sampleCourses,
   sampleProfile,
 } from "./sampleData";
 import type {
@@ -24,6 +25,10 @@ import type {
   Category,
   Collection,
   CommissionRequest,
+  Course,
+  Donation,
+  Order,
+  OrderStatus,
   Profile,
 } from "./types";
 
@@ -35,6 +40,9 @@ interface AdminState {
   animations: Animation[];
   collections: Collection[];
   commissions: CommissionRequest[];
+  courses: Course[];
+  orders: Order[];
+  donations: Donation[];
   profile: Profile;
   saveArtwork: (a: Partial<Artwork>) => Promise<void>;
   deleteArtwork: (id: string) => Promise<void>;
@@ -44,7 +52,10 @@ interface AdminState {
   deleteCategory: (id: string) => Promise<void>;
   saveCollection: (c: Partial<Collection>) => Promise<void>;
   deleteCollection: (id: string) => Promise<void>;
+  saveCourse: (c: Partial<Course>) => Promise<void>;
+  deleteCourse: (id: string) => Promise<void>;
   setCommissionStatus: (id: string, status: CommissionRequest["status"]) => Promise<void>;
+  setOrderStatus: (id: string, status: OrderStatus) => Promise<void>;
   saveProfile: (p: Partial<Profile>) => Promise<void>;
 }
 
@@ -59,11 +70,13 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
   const [animations, setAnimations] = useState<Animation[]>(sampleAnimations);
   const [collections, setCollections] = useState<Collection[]>(sampleCollections);
   const [commissions, setCommissions] = useState<CommissionRequest[]>(sampleCommissions);
+  const [courses, setCourses] = useState<Course[]>(sampleCourses);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [donations, setDonations] = useState<Donation[]>([]);
   const [profile, setProfile] = useState<Profile>(sampleProfile);
 
   const supabase = useMemo(() => createClient(), []);
 
-  // Load live data when configured.
   useEffect(() => {
     let active = true;
     (async () => {
@@ -71,12 +84,15 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
         setLoading(false);
         return;
       }
-      const [aw, cat, an, col, cm, pr] = await Promise.all([
+      const [aw, cat, an, col, cm, cr, ord, don, pr] = await Promise.all([
         supabase.from("artworks").select("*, category:artwork_categories(*)").order("created_at", { ascending: false }),
         supabase.from("artwork_categories").select("*").order("sort_order"),
         supabase.from("animations").select("*").order("created_at", { ascending: false }),
         supabase.from("collections").select("*").order("created_at", { ascending: false }),
         supabase.from("commission_requests").select("*").order("created_at", { ascending: false }),
+        supabase.from("courses").select("*, lessons:course_lessons(*)").order("created_at", { ascending: false }),
+        supabase.from("orders").select("*").order("created_at", { ascending: false }),
+        supabase.from("donations").select("*").order("created_at", { ascending: false }),
         supabase.from("profiles").select("*").limit(1).single(),
       ]);
       if (!active) return;
@@ -85,6 +101,9 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
       if (an.data) setAnimations(an.data as Animation[]);
       if (col.data) setCollections(col.data as Collection[]);
       if (cm.data) setCommissions(cm.data as CommissionRequest[]);
+      if (cr.data) setCourses(cr.data as Course[]);
+      if (ord.data) setOrders(ord.data as Order[]);
+      if (don.data) setDonations(don.data as Donation[]);
       if (pr.data) setProfile(pr.data as Profile);
       setLoading(false);
     })();
@@ -99,6 +118,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     if (supabase) {
       const payload = { ...a, updated_at: now };
       delete (payload as Record<string, unknown>).category;
+      delete (payload as Record<string, unknown>).images;
       if (a.id) {
         await supabase.from("artworks").update(payload).eq("id", a.id);
       } else {
@@ -111,7 +131,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     setArtworks((prev) => {
       const cat = categories.find((c) => c.id === a.category_id) ?? null;
       if (a.id) return prev.map((x) => (x.id === a.id ? { ...x, ...a, category: cat, updated_at: now } : x));
-      return [{ id: uid(), currency: "UGX", status: "available", created_at: now, updated_at: now, featured_image_url: "", title: "", slug: "", ...a, category: cat } as Artwork, ...prev];
+      return [{ id: uid(), currency: "UGX", status: "available", allow_digital: true, allow_print: false, digital_price: null, print_price: null, digital_file_url: null, created_at: now, updated_at: now, featured_image_url: "", title: "", slug: "", price: null, description: null, category_id: null, medium: null, dimensions: null, year_created: null, ...a, category: cat } as Artwork, ...prev];
     });
   }, [supabase, categories]);
 
@@ -167,6 +187,7 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     const now = new Date().toISOString();
     if (supabase) {
       const payload = { ...c };
+      delete (payload as Record<string, unknown>).artwork_ids;
       if (c.id) await supabase.from("collections").update(payload).eq("id", c.id);
       else await supabase.from("collections").insert({ ...payload, created_at: now });
       const { data } = await supabase.from("collections").select("*").order("created_at", { ascending: false });
@@ -184,6 +205,50 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     setCollections((prev) => prev.filter((x) => x.id !== id));
   }, [supabase]);
 
+  // ── Courses (with lessons) ──
+  const saveCourse = useCallback(async (c: Partial<Course>) => {
+    const now = new Date().toISOString();
+    const lessons = c.lessons ?? [];
+    if (supabase) {
+      const payload = {
+        title: c.title, slug: c.slug, description: c.description,
+        thumbnail_url: c.thumbnail_url, price: c.price, currency: c.currency ?? "UGX",
+        level: c.level, status: c.status ?? "draft", updated_at: now,
+      };
+      let courseId = c.id;
+      if (courseId) {
+        await supabase.from("courses").update(payload).eq("id", courseId);
+      } else {
+        const { data } = await supabase.from("courses").insert({ ...payload, created_at: now }).select("id").single();
+        courseId = data?.id;
+      }
+      if (courseId) {
+        await supabase.from("course_lessons").delete().eq("course_id", courseId);
+        if (lessons.length) {
+          await supabase.from("course_lessons").insert(
+            lessons.map((l, i) => ({
+              course_id: courseId, title: l.title, description: l.description,
+              video_url: l.video_url, duration: l.duration, sort_order: i + 1,
+              is_preview: l.is_preview,
+            }))
+          );
+        }
+      }
+      const { data } = await supabase.from("courses").select("*, lessons:course_lessons(*)").order("created_at", { ascending: false });
+      if (data) setCourses(data as Course[]);
+      return;
+    }
+    setCourses((prev) => {
+      if (c.id) return prev.map((x) => (x.id === c.id ? { ...x, ...c, lessons, updated_at: now } : x));
+      return [{ id: uid(), title: "", slug: "", description: null, thumbnail_url: "", price: null, currency: "UGX", level: null, status: "draft", lessons, created_at: now, updated_at: now, ...c } as Course, ...prev];
+    });
+  }, [supabase]);
+
+  const deleteCourse = useCallback(async (id: string) => {
+    if (supabase) await supabase.from("courses").delete().eq("id", id);
+    setCourses((prev) => prev.filter((x) => x.id !== id));
+  }, [supabase]);
+
   // ── Commissions ──
   const setCommissionStatus = useCallback(async (id: string, status: CommissionRequest["status"]) => {
     const now = new Date().toISOString();
@@ -191,11 +256,16 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     setCommissions((prev) => prev.map((x) => (x.id === id ? { ...x, status, updated_at: now } : x)));
   }, [supabase]);
 
+  // ── Orders ──
+  const setOrderStatus = useCallback(async (id: string, status: OrderStatus) => {
+    const now = new Date().toISOString();
+    if (supabase) await supabase.from("orders").update({ status, updated_at: now }).eq("id", id);
+    setOrders((prev) => prev.map((x) => (x.id === id ? { ...x, status, updated_at: now } : x)));
+  }, [supabase]);
+
   // ── Profile ──
   const saveProfile = useCallback(async (p: Partial<Profile>) => {
-    if (supabase) {
-      await supabase.from("profiles").update(p).eq("id", profile.id);
-    }
+    if (supabase) await supabase.from("profiles").update(p).eq("id", profile.id);
     setProfile((prev) => ({ ...prev, ...p }));
   }, [supabase, profile.id]);
 
@@ -207,6 +277,9 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     animations,
     collections,
     commissions,
+    courses,
+    orders,
+    donations,
     profile,
     saveArtwork,
     deleteArtwork,
@@ -216,7 +289,10 @@ export function AdminStoreProvider({ children }: { children: React.ReactNode }) 
     deleteCategory,
     saveCollection,
     deleteCollection,
+    saveCourse,
+    deleteCourse,
     setCommissionStatus,
+    setOrderStatus,
     saveProfile,
   };
 

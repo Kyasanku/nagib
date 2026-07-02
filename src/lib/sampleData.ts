@@ -8,6 +8,7 @@ import type {
   Category,
   Collection,
   CommissionRequest,
+  Course,
   Profile,
 } from "./types";
 
@@ -24,7 +25,12 @@ export const sampleCategories: Category[] = [
 
 const now = "2026-06-01T10:00:00Z";
 
-export const sampleArtworks: Artwork[] = [
+type RawArtwork = Omit<
+  Artwork,
+  "digital_price" | "print_price" | "allow_digital" | "allow_print" | "digital_file_url"
+>;
+
+const rawArtworks: RawArtwork[] = [
   {
     id: "a1", title: "Ember Requiem", slug: "ember-requiem",
     description: "A lone figure suspended in a field of dying light. Painted over three weeks in layered glazes, Ember Requiem explores the quiet moment before a memory fades.",
@@ -111,6 +117,18 @@ export const sampleArtworks: Artwork[] = [
   },
 ];
 
+// Fill in commerce defaults: digital = base price, print ≈ 1.6× (rounded),
+// both formats enabled. Real data comes from Supabase once live.
+const roundUGX = (n: number) => Math.round(n / 10000) * 10000;
+export const sampleArtworks: Artwork[] = rawArtworks.map((a) => ({
+  ...a,
+  digital_price: a.price,
+  print_price: a.price ? roundUGX(a.price * 1.6) : null,
+  allow_digital: true,
+  allow_print: true,
+  digital_file_url: null,
+}));
+
 export const sampleAnimations: Animation[] = [
   {
     id: "n1", title: "Lantern", slug: "lantern",
@@ -196,3 +214,30 @@ export const sampleProfile: Profile = {
   twitter: "nagibudraws",
   behance: "nagibusemwanga",
 };
+
+export const sampleCourses: Course[] = [
+  {
+    id: "cr1", title: "Digital Painting: Light & Mood", slug: "digital-painting-light-mood",
+    description: "A hands-on course on building atmosphere with light. We work from flat sketch to a finished, glowing piece — covering value, colour temperature, edges and glazing in a digital workflow.",
+    thumbnail_url: img("photo-1549490349-8643362247b5"),
+    price: 120000, currency: "UGX", level: "Beginner → Intermediate", status: "published",
+    lessons: [
+      { id: "l1", course_id: "cr1", title: "Welcome & setup", description: "Brushes, canvas and how the course works.", video_url: "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4", duration: "6:20", sort_order: 1, is_preview: true },
+      { id: "l2", course_id: "cr1", title: "Thinking in values", description: "Blocking light and shadow before colour.", video_url: "https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4", duration: "18:04", sort_order: 2, is_preview: false },
+      { id: "l3", course_id: "cr1", title: "Colour temperature", description: "Warm light, cool shadow, and why it reads.", video_url: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4", duration: "22:11", sort_order: 3, is_preview: false },
+      { id: "l4", course_id: "cr1", title: "Glazing to a finish", description: "Layered glazes for that final glow.", video_url: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4", duration: "27:39", sort_order: 4, is_preview: false },
+    ],
+    created_at: now, updated_at: now,
+  },
+  {
+    id: "cr2", title: "Character Design Foundations", slug: "character-design-foundations",
+    description: "How I develop original characters — from silhouette and shape language to expression sheets and turnarounds.",
+    thumbnail_url: img("photo-1543857778-c4a1a3e0b2eb"),
+    price: 95000, currency: "UGX", level: "All levels", status: "published",
+    lessons: [
+      { id: "l5", course_id: "cr2", title: "Shape language", description: "Reading personality from silhouette.", video_url: "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4", duration: "14:50", sort_order: 1, is_preview: true },
+      { id: "l6", course_id: "cr2", title: "Expression sheets", description: "Giving a character range.", video_url: "https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4", duration: "19:22", sort_order: 2, is_preview: false },
+    ],
+    created_at: now, updated_at: now,
+  },
+];

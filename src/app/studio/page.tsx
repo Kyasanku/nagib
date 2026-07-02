@@ -17,10 +17,10 @@ export default function AdminOverview() {
   const soldValue = sold.reduce((sum, a) => sum + (a.price ?? 0), 0);
 
   const stats = [
-    { label: "Artworks", value: artworks.length, sub: `${available.length} available`, icon: ImageIcon, href: "/admin/artworks" },
-    { label: "Animations", value: animations.length, sub: "published & drafts", icon: Film, href: "/admin/animations" },
-    { label: "New requests", value: newCommissions.length, sub: `${commissions.length} total`, icon: Inbox, href: "/admin/commissions" },
-    { label: "Sold value", value: formatPrice(soldValue), sub: `${sold.length} pieces`, icon: DollarSign, href: "/admin/artworks" },
+    { label: "Artworks", value: artworks.length, sub: `${available.length} available`, icon: ImageIcon, href: "/studio/artworks" },
+    { label: "Animations", value: animations.length, sub: "published & drafts", icon: Film, href: "/studio/animations" },
+    { label: "New requests", value: newCommissions.length, sub: `${commissions.length} total`, icon: Inbox, href: "/studio/commissions" },
+    { label: "Sold value", value: formatPrice(soldValue), sub: `${sold.length} pieces`, icon: DollarSign, href: "/studio/artworks" },
   ];
 
   return (
@@ -56,7 +56,7 @@ export default function AdminOverview() {
         <div className="rounded-2xl border border-black/[0.05] bg-ink-800/50 p-6">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-display text-xl text-ivory">Recent commission requests</h2>
-            <Link href="/admin/commissions" className="text-sm text-ivory-dim hover:text-gold">
+            <Link href="/studio/commissions" className="text-sm text-ivory-dim hover:text-gold">
               View all →
             </Link>
           </div>
@@ -80,10 +80,10 @@ export default function AdminOverview() {
         <div className="rounded-2xl border border-black/[0.05] bg-ink-800/50 p-6">
           <h2 className="mb-4 font-display text-xl text-ivory">Quick actions</h2>
           <div className="space-y-2">
-            <Link href="/admin/artworks" className="btn-ghost w-full justify-between">Upload new artwork <ArrowUpRight size={16} /></Link>
-            <Link href="/admin/animations" className="btn-ghost w-full justify-between">Add an animation <ArrowUpRight size={16} /></Link>
-            <Link href="/admin/collections" className="btn-ghost w-full justify-between">Create a collection <ArrowUpRight size={16} /></Link>
-            <Link href="/admin/profile" className="btn-ghost w-full justify-between">Edit artist profile <ArrowUpRight size={16} /></Link>
+            <Link href="/studio/artworks" className="btn-ghost w-full justify-between">Upload new artwork <ArrowUpRight size={16} /></Link>
+            <Link href="/studio/animations" className="btn-ghost w-full justify-between">Add an animation <ArrowUpRight size={16} /></Link>
+            <Link href="/studio/collections" className="btn-ghost w-full justify-between">Create a collection <ArrowUpRight size={16} /></Link>
+            <Link href="/studio/profile" className="btn-ghost w-full justify-between">Edit artist profile <ArrowUpRight size={16} /></Link>
           </div>
         </div>
       </div>

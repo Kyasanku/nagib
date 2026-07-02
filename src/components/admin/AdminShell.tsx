@@ -8,7 +8,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
 
   // The login screen stands alone — no store, no chrome.
-  if (pathname === "/admin/login") {
+  if (pathname === "/studio/login") {
     return <>{children}</>;
   }
 

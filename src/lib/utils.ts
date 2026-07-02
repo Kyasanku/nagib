@@ -1,7 +1,27 @@
 import { type ClassValue, clsx } from "clsx";
+import type { Artwork } from "./types";
 
 export function cn(...inputs: ClassValue[]) {
   return clsx(inputs);
+}
+
+// Lowest enabled purchase price for an artwork (digital vs print),
+// falling back to the legacy `price` field.
+export function artworkFromPrice(a: Artwork): number | null {
+  const opts: number[] = [];
+  if (a.allow_digital && a.digital_price != null) opts.push(a.digital_price);
+  if (a.allow_print && a.print_price != null) opts.push(a.print_price);
+  if (!opts.length && a.price != null) opts.push(a.price);
+  return opts.length ? Math.min(...opts) : null;
+}
+
+// True when the artwork offers more than one purchase format (so UIs can
+// show a "From" prefix).
+export function artworkHasMultipleFormats(a: Artwork): boolean {
+  return (
+    !!(a.allow_digital && a.digital_price != null) &&
+    !!(a.allow_print && a.print_price != null)
+  );
 }
 
 export function formatPrice(price: number | null, currency = "UGX") {

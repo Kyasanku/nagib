@@ -23,7 +23,7 @@ export default function AdminLogin() {
     const supabase = createClient();
     if (!supabase) {
       // Demo mode — walk straight into the dashboard.
-      router.push("/admin");
+      router.push("/studio");
       return;
     }
 
@@ -34,7 +34,7 @@ export default function AdminLogin() {
       setError(error.message);
       return;
     }
-    router.push("/admin");
+    router.push("/studio");
     router.refresh();
   }
 

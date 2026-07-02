@@ -10,6 +10,7 @@ const links = [
   { href: "/gallery", label: "Gallery" },
   { href: "/animations", label: "Animations" },
   { href: "/marketplace", label: "Marketplace" },
+  { href: "/courses", label: "Courses" },
   { href: "/commissions", label: "Commissions" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },

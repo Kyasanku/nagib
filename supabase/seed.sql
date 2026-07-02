@@ -62,3 +62,21 @@ on conflict (slug) do nothing;
 insert into commission_requests (client_name, client_email, commission_type, budget, description, status)
 values ('Priya Anand','priya@example.com','Character Design','3,000,000–4,500,000 UGX','Two original characters for a tabletop campaign.','new')
 on conflict do nothing;
+
+-- Courses + lessons
+insert into courses (title, slug, description, thumbnail_url, price, currency, level, status) values
+  ('Digital Painting: Light & Mood','digital-painting-light-mood','A hands-on course on building atmosphere with light — value, colour temperature, edges and glazing.','https://images.unsplash.com/photo-1549490349-8643362247b5?auto=format&fit=crop&w=1200&q=80',120000,'UGX','Beginner → Intermediate','published'),
+  ('Character Design Foundations','character-design-foundations','Developing original characters — silhouette, shape language, expression sheets and turnarounds.','https://images.unsplash.com/photo-1543857778-c4a1a3e0b2eb?auto=format&fit=crop&w=1200&q=80',95000,'UGX','All levels','published')
+on conflict (slug) do nothing;
+
+insert into course_lessons (course_id, title, description, video_url, duration, sort_order, is_preview)
+select c.id, v.title, v.descr, v.url, v.dur, v.ord, v.preview
+from (values
+  ('digital-painting-light-mood','Welcome & setup','Brushes, canvas and how the course works.','https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4','6:20',1,true),
+  ('digital-painting-light-mood','Thinking in values','Blocking light and shadow before colour.','https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4','18:04',2,false),
+  ('digital-painting-light-mood','Colour temperature','Warm light, cool shadow, and why it reads.','https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4','22:11',3,false),
+  ('character-design-foundations','Shape language','Reading personality from silhouette.','https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4','14:50',1,true),
+  ('character-design-foundations','Expression sheets','Giving a character range.','https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4','19:22',2,false)
+) as v(cslug, title, descr, url, dur, ord, preview)
+join courses c on c.slug = v.cslug
+on conflict do nothing;

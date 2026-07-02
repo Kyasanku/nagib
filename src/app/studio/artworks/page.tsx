@@ -24,6 +24,11 @@ const empty: Partial<Artwork> = {
   year_created: new Date().getFullYear(),
   featured_image_url: "",
   is_new: true,
+  allow_digital: true,
+  allow_print: true,
+  digital_price: null,
+  print_price: null,
+  digital_file_url: "",
 };
 
 export default function AdminArtworks() {
@@ -42,8 +47,16 @@ export default function AdminArtworks() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    // Keep the legacy `price` in sync with the lowest enabled format so
+    // cards and "from" prices stay correct.
+    const price =
+      (draft.allow_digital ? draft.digital_price : null) ??
+      (draft.allow_print ? draft.print_price : null) ??
+      draft.price ??
+      null;
     await saveArtwork({
       ...draft,
+      price,
       slug: draft.slug || slugify(draft.title ?? "untitled"),
     });
     setOpen(false);
@@ -164,30 +177,55 @@ export default function AdminArtworks() {
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div>
-              <Label>Price</Label>
-              <Input
-                type="number"
-                value={draft.price ?? ""}
-                onChange={(e) => setDraft((d) => ({ ...d, price: e.target.value ? Number(e.target.value) : null }))}
-                placeholder="1400"
-              />
+          {/* Pricing & formats */}
+          <div className="space-y-4 rounded-2xl border border-black/[0.06] bg-ink p-4">
+            <p className="text-sm font-medium text-ivory">Pricing &amp; formats</p>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-xl border border-black/[0.06] p-3">
+                <label className="flex items-center gap-2 text-sm font-medium text-ivory">
+                  <input type="checkbox" checked={!!draft.allow_digital}
+                    onChange={(e) => setDraft((d) => ({ ...d, allow_digital: e.target.checked }))}
+                    className="h-4 w-4 accent-gold" />
+                  Digital copy
+                </label>
+                <Input type="number" className="mt-2" placeholder="Price e.g. 120000"
+                  value={draft.digital_price ?? ""}
+                  disabled={!draft.allow_digital}
+                  onChange={(e) => setDraft((d) => ({ ...d, digital_price: e.target.value ? Number(e.target.value) : null }))} />
+              </div>
+              <div className="rounded-xl border border-black/[0.06] p-3">
+                <label className="flex items-center gap-2 text-sm font-medium text-ivory">
+                  <input type="checkbox" checked={!!draft.allow_print}
+                    onChange={(e) => setDraft((d) => ({ ...d, allow_print: e.target.checked }))}
+                    className="h-4 w-4 accent-gold" />
+                  Printed copy
+                </label>
+                <Input type="number" className="mt-2" placeholder="Price e.g. 300000"
+                  value={draft.print_price ?? ""}
+                  disabled={!draft.allow_print}
+                  onChange={(e) => setDraft((d) => ({ ...d, print_price: e.target.value ? Number(e.target.value) : null }))} />
+              </div>
             </div>
-            <div>
-              <Label>Currency</Label>
-              <Input
-                value={draft.currency ?? "UGX"}
-                onChange={(e) => setDraft((d) => ({ ...d, currency: e.target.value }))}
-              />
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <Label>Currency</Label>
+                <Input value={draft.currency ?? "UGX"}
+                  onChange={(e) => setDraft((d) => ({ ...d, currency: e.target.value }))} />
+              </div>
+              <div>
+                <Label>Year created</Label>
+                <Input type="number" value={draft.year_created ?? ""}
+                  onChange={(e) => setDraft((d) => ({ ...d, year_created: e.target.value ? Number(e.target.value) : null }))} />
+              </div>
             </div>
+
             <div>
-              <Label>Year</Label>
-              <Input
-                type="number"
-                value={draft.year_created ?? ""}
-                onChange={(e) => setDraft((d) => ({ ...d, year_created: e.target.value ? Number(e.target.value) : null }))}
-              />
+              <Label>Digital file URL (delivered after purchase)</Label>
+              <Input value={draft.digital_file_url ?? ""}
+                onChange={(e) => setDraft((d) => ({ ...d, digital_file_url: e.target.value }))}
+                placeholder="Path in the 'deliverables' bucket, or a full URL" />
             </div>
           </div>
 

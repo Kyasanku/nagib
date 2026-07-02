@@ -51,6 +51,7 @@ export default async function Footer() {
             <li><Link href="/gallery" className="hover:text-ivory">Gallery</Link></li>
             <li><Link href="/animations" className="hover:text-ivory">Animations</Link></li>
             <li><Link href="/marketplace" className="hover:text-ivory">Marketplace</Link></li>
+            <li><Link href="/courses" className="hover:text-ivory">Courses</Link></li>
             <li><Link href="/about" className="hover:text-ivory">About the artist</Link></li>
           </ul>
         </div>
@@ -59,8 +60,9 @@ export default async function Footer() {
           <p className="text-xs uppercase tracking-[0.2em] text-ivory-dim">Work with me</p>
           <ul className="mt-4 space-y-3 text-sm text-ivory-muted">
             <li><Link href="/commissions" className="hover:text-ivory">Commission a piece</Link></li>
+            <li><Link href="/support" className="hover:text-ivory">Support the studio</Link></li>
             <li><Link href="/contact" className="hover:text-ivory">Business inquiries</Link></li>
-            <li><Link href="/admin" className="hover:text-ivory">Studio dashboard</Link></li>
+            <li><Link href="/studio" className="hover:text-ivory">Studio dashboard</Link></li>
           </ul>
         </div>
       </div>

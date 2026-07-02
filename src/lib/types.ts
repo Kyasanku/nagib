@@ -12,6 +12,14 @@ export type CommissionStatus =
   | "completed"
   | "rejected";
 
+export type CourseStatus = "published" | "draft" | "hidden";
+export type OrderStatus = "pending" | "paid" | "failed" | "shipped" | "refunded";
+export type OrderItemType =
+  | "artwork_digital"
+  | "artwork_print"
+  | "course"
+  | "donation";
+
 export interface Category {
   id: string;
   name: string;
@@ -35,8 +43,17 @@ export interface Artwork {
   description: string | null;
   category_id: string | null;
   category?: Category | null;
+  // `price` is the legacy/primary display price (kept for compatibility).
   price: number | null;
   currency: string;
+  // Commerce: digital vs print offering.
+  digital_price: number | null;
+  print_price: number | null;
+  allow_digital: boolean;
+  allow_print: boolean;
+  // Deliverable file for the digital purchase (stored in the private
+  // `deliverables` bucket; served via signed URL after payment).
+  digital_file_url: string | null;
   status: ArtworkStatus;
   medium: string | null;
   dimensions: string | null;
@@ -84,6 +101,75 @@ export interface CommissionRequest {
   status: CommissionStatus;
   created_at: string;
   updated_at: string;
+}
+
+export interface Course {
+  id: string;
+  title: string;
+  slug: string;
+  description: string | null;
+  thumbnail_url: string;
+  price: number | null;
+  currency: string;
+  level: string | null;
+  status: CourseStatus;
+  lessons?: CourseLesson[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CourseLesson {
+  id: string;
+  course_id: string;
+  title: string;
+  description: string | null;
+  video_url: string;
+  duration: string | null;
+  sort_order: number;
+  is_preview: boolean;
+}
+
+export interface CourseEnrollment {
+  id: string;
+  course_id: string;
+  order_id: string | null;
+  buyer_email: string;
+  created_at: string;
+}
+
+export interface Order {
+  id: string;
+  reference: string; // tx_ref sent to Flutterwave
+  item_type: OrderItemType;
+  item_id: string | null;
+  item_title: string;
+  buyer_name: string;
+  buyer_email: string;
+  buyer_phone: string | null;
+  amount: number;
+  currency: string;
+  status: OrderStatus;
+  flw_transaction_id: string | null;
+  // Shipping (print orders)
+  shipping_name: string | null;
+  shipping_address: string | null;
+  shipping_city: string | null;
+  shipping_country: string | null;
+  shipping_phone: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Donation {
+  id: string;
+  name: string | null;
+  email: string | null;
+  amount: number | null;
+  currency: string;
+  message: string | null;
+  status: "pending" | "paid" | "failed";
+  created_at: string;
 }
 
 export interface PurchaseInquiry {

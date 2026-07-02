@@ -8,6 +8,7 @@ import {
   sampleArtworks,
   sampleCategories,
   sampleCollections,
+  sampleCourses,
   sampleProfile,
 } from "./sampleData";
 import type {
@@ -15,6 +16,7 @@ import type {
   Artwork,
   Category,
   Collection,
+  Course,
   Profile,
   Row,
 } from "./types";
@@ -137,6 +139,57 @@ export async function getCollections(): Promise<Collection[]> {
 export async function getCollectionBySlug(slug: string): Promise<Collection | null> {
   const collections = await getCollections();
   return collections.find((c) => c.slug === slug) ?? null;
+}
+
+// ── Courses ────────────────────────────────────────────────
+export async function getCourses(): Promise<Course[]> {
+  const supabase = await createServerSupabase();
+  if (supabase) {
+    const { data } = await supabase
+      .from("courses")
+      .select("*, lessons:course_lessons(*)")
+      .eq("status", "published")
+      .order("created_at", { ascending: false });
+    if (data) return data as Course[];
+  }
+  return sampleCourses.filter((c) => c.status === "published");
+}
+
+export async function getCourseBySlug(slug: string): Promise<Course | null> {
+  const supabase = await createServerSupabase();
+  if (supabase) {
+    const { data } = await supabase
+      .from("courses")
+      .select("*, lessons:course_lessons(*)")
+      .eq("slug", slug)
+      .single();
+    if (data) {
+      const course = data as Course;
+      course.lessons = (course.lessons ?? []).sort((a, b) => a.sort_order - b.sort_order);
+      return course;
+    }
+  }
+  const found = sampleCourses.find((c) => c.slug === slug);
+  return found ?? null;
+}
+
+// Returns the enrollment id if this email is enrolled in the course.
+export async function findEnrollment(
+  courseId: string,
+  enrollmentId: string
+): Promise<boolean> {
+  const supabase = await createServerSupabase();
+  if (supabase) {
+    const { data } = await supabase
+      .from("course_enrollments")
+      .select("id")
+      .eq("id", enrollmentId)
+      .eq("course_id", courseId)
+      .maybeSingle();
+    return !!data;
+  }
+  // Demo mode: any non-empty token unlocks, so the flow is explorable.
+  return enrollmentId.length > 0;
 }
 
 // ── Profile ────────────────────────────────────────────────
